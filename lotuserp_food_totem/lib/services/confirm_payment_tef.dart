@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 import 'package:lotus_food_totem/common/custom_cherry.dart';
+import 'package:lotus_food_totem/page/loading/loading_page.dart';
 import 'package:lotus_food_totem/services/const_tef/const_tef.dart';
 
 import '../page/confirm_print/confirm_print.dart';
@@ -23,7 +24,26 @@ class ConfirmPaymentTef {
 
   Future<void> confirmPayment(
       BuildContext context, String pagamentoForma, String valor) async {
-    var tef = paymentController.paymentForm[0].tef_tipo;
+    Get.dialog(barrierDismissible: false, const LoadingScreen());
+    var paymentFormattedNFCE = _transformPaymentFormaTefElgin(pagamentoForma);
+    var xmlNfce = await PostNfce().postNfce(context, paymentFormattedNFCE);
+    if (xmlNfce.isNotEmpty) {
+      for (var i = 0; i < 6; i++) {
+        Get.back();
+      }
+
+      var printXml = await PrintNfceXml().printNfceXml(xmlArgs: xmlNfce);
+      while (printXml != true) {
+        await Get.dialog(
+          barrierDismissible: false,
+          ComfirmPrint(
+            function: () async {
+              return await PrintNfceXml().printNfceXml(xmlArgs: xmlNfce);
+            },
+          ),
+        );
+      }
+      /* var tef = paymentController.paymentForm[0].tef_tipo;
     if (tef == ConstTef.NENHUM.index) {
       return;
     }
@@ -90,12 +110,15 @@ class ConfirmPaymentTef {
     } else if (tef == ConstTef.TEF_SITEF.index) {
       var paymentFormatted = _transformPaymentFormaSiTef(pagamentoForma);
       var paymentFormattedNFCE = _transformPaymentFormaTefElgin(pagamentoForma);
-      Get.to(() => CliSiTefExemple(
+    
+      
+      /*Get.to(() => CliSiTefExemple(
             configController: configController,
             paymentController: paymentController,
             pagamentoFormaSitef: paymentFormatted,
             paymentTypeNFCE: paymentFormattedNFCE,
-          ));
+          ));*/
+    }*/
     }
   }
 
